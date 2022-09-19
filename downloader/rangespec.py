@@ -6,7 +6,7 @@ import logging
 KB = 1 << 10
 HALF_MB = 1 << 19
 MB = 1 << 20
-UNIT = int(MB * 6)
+UNIT = int(MB * 3)
 
 
 class RangeSlicer:

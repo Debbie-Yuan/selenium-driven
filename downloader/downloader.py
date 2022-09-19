@@ -12,29 +12,35 @@ from .rangespec import RangeSlicer
 rs = RangeSlicer()
 SLICING = True
 THREADED = True
-CHUNK_SIZE = 1 << 16
+# CHUNK_SIZE = 1 << 16
+CHUNK_SIZE = 1 << 10
 LAST_REPORT_TIME = None
 Bytes = 0
-Time = 1  # s
-NS = 1000000000  # ns
-UNIT = int(1 * NS)
+Time = 0  # s
+NS = 1000000000  # S
+REPORT_FREQUENCY = int(0.5 * NS)  # 0.5S
 
 
 def report(bytes_amt, time_ns):
+    global LAST_REPORT_TIME, Bytes, Time
 
-    # if LAST_REPORT_TIME is None:
-    #     LAST_REPORT_TIME = time.time_ns()
-    # logging.debug(f"[REPORT] Before add, Bytes = {Bytes}, Time = {Time}, bytes_amt = {bytes_amt}, timens = {time_ns}")
-    # if (ct := time.time_ns() - LAST_REPORT_TIME) < UNIT:
-    #     Bytes += bytes_amt
-    #     Time += time_ns
-    #     return
-    #
-    # logging.debug(f"[REPORT] Current speed : {Bytes / Time / NS / 1000 :.2f} KBytes/s")
-    logging.debug(f"[REPORT] bytes_amt = {bytes_amt}, time_ns = {time_ns}, Current speed : {bytes_amt / time_ns / NS / 1000 :.2f} KBytes/s")
-    # LAST_REPORT_TIME = ct
-    # Bytes = 0
-    # Time = 1
+    if LAST_REPORT_TIME is None:
+        LAST_REPORT_TIME = time.time_ns()
+    # logging.debug(f"[REPORT] Before add, Bytes = {Bytes},
+    # Time = {Time}, bytes_amt = {bytes_amt}, timens = {time_ns}")
+    ct = time.time_ns()
+    if (time.time_ns() - LAST_REPORT_TIME) < REPORT_FREQUENCY:
+        Bytes += bytes_amt
+        Time += time_ns
+        return
+
+    logging.debug(f"[REPORT] Current speed : {Bytes / Time * NS / 1000 :.2f} KBytes/s")
+    # logging.debug(f"[REPORT] bytes_amt = {bytes_amt}, time_ns = {time_ns},
+    # Current speed : {bytes_amt / time_ns * NS / 1000} KBytes/s")
+    # Clear and reset the cursor.
+    LAST_REPORT_TIME = ct
+    Bytes = 0
+    Time = 0
 
 
 def clear_report():
@@ -52,7 +58,6 @@ def _download(
     # Timeout = UNIT bytes // 5 kbps * 1024 bytes + 1
     try:
         start_req = time.time_ns()
-
         resp = s.get(url=url, headers=headers, data=data,
                      timeout=1229, verify=False, stream=True)
 
@@ -68,8 +73,9 @@ def _download(
 
                     # Audit - bytes
                     downloaded_bytes += len(chunk)
-                    report(len(chunk), ct := time.time_ns() - start_req)
-                    start_req = ct
+                    current_time = time.time_ns()
+                    report(len(chunk), time.time_ns() - start_req)
+                    start_req = current_time
 
             with open(name, "wb") as f:
                 f.write(buffer.getvalue())
@@ -140,6 +146,8 @@ def download(url: str, path=None, name=None, headers=None, data=None, retry_time
     checklist_fast_write_fp = open(fn, "wb")
     pickle.dump(checklist, checklist_fast_write_fp)
     retrylist = queue.SimpleQueue()
+
+    epoch = 1
     # Download by slice
     for low, high in rs.iterate_over_slices(slices):
         range_info = rs.gen_range_headers(low, high)
@@ -147,27 +155,34 @@ def download(url: str, path=None, name=None, headers=None, data=None, retry_time
         # Fast-forward check
         # TODO Pre-check all fast-forwarded fragments.
         if range_info["Range"] in checklist:
-            logging.info(f"[Download] [Fast-forward] File of range {range_info['Range']} existed, continue.")
+            logging.info(f"[Download][{epoch}/{len(slices) - 1}] [Fast-forward] "
+                         f"File of range {range_info['Range']} existed, continue.")
             continue
 
         # Mix into headers
         headers.update(range_info)
         _name = name_handler(path=path, name=name, range_info=range_info, url=url)
-        logging.info(f"[Download] Starting with url = {url}, name = {_name}, headers = {headers}")
+        logging.info(f"[Download][{epoch}/{len(slices) - 1}] "
+                     f"Starting with url = {url}, name = {_name}, headers = {headers}")
         st = time.time()
         code = _download(url, name=_name, s=s, headers=headers, data=data)
         duration = time.time() - st
         logging.info(
-            f"[Download] Ended with code = {code}, used {duration} secs @ {(high - low) / 1024 / duration:.2f}KB/s."
+            f"[Download][{epoch}/{len(slices) - 1}] "
+            f"Ended with code = {code}, used {duration} secs @ {(high - low) / 1024 / duration:.2f}KB/s."
         )
 
         # Successful queue
         if code == 0:
-            logging.debug(f"[DEBUG] ** ** ** checklist = {checklist}, range_info = {range_info}")
+            logging.debug(f"[DEBUG][{epoch}/{len(slices) - 1}] ** ** ** "
+                          f"checklist = {checklist}, range_info = {range_info}")
             checklist[range_info["Range"]] = name
             pickle.dump(checklist, checklist_fast_write_fp)
         else:
             retrylist.put((url, name, headers, data))
+
+        # Counter
+        epoch += 1
 
     # Check for the retry list, and retry for those failed items.
     retry_checkpoint = time.time()

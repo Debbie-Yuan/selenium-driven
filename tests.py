@@ -8,6 +8,9 @@ from downloader import download
 
 
 logging.basicConfig(filename="tests.log", level=logging.DEBUG)
+# logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
+logging.getLogger("requests").setLevel(logging.WARNING)
+logging.getLogger("urllib3").setLevel(logging.WARNING)
 
 
 def test():
@@ -15,6 +18,7 @@ def test():
     if len(sys.argv) == 1:
         raise ValueError("No url provided.")
     url = sys.argv[-1]
+    # url = ""
     name = url.rsplit("/", maxsplit=1)[-1]
     if "." in name:
         name = name.split(".")[0]
