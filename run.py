@@ -4,7 +4,7 @@ import urllib3
 import logging
 import argparse
 
-from downloader import download
+from downloader import download, concat
 from downloader.rangespec import DParts
 
 logging.basicConfig(filename="tests.log", level=logging.DEBUG)
@@ -13,12 +13,7 @@ logging.getLogger("requests").setLevel(logging.WARNING)
 logging.getLogger("urllib3").setLevel(logging.WARNING)
 
 
-base = argparse.ArgumentParser()
-base.add_argument("url")
-base.add_argument("-c", "--dparts", help="Folder or specific parts list file path.")
-
-
-def test(**kwargs):
+def download_wrapper(**kwargs):
     # Mixin
     keywords = {'path': None, 'name': None, 'headers': None, 'data': None, 'retry_timeout': 3600, 'dparts': None}
 
@@ -47,10 +42,39 @@ def test(**kwargs):
     logging.info(tf)
 
 
+def concat_wrapper(**kwargs):
+    # Arguments check
+    path = kwargs.get('path')
+    if not os.path.exists(path):
+        raise FileNotFoundError(f"Path {path} not found.")
+    concat(path)
+
+
+def get_argparser():
+    _base = argparse.ArgumentParser()
+
+    # Download subcommand
+    subparser = _base.add_subparsers()
+    download_parser = subparser.add_parser("download")
+    download_parser.add_argument("url")
+    download_parser.add_argument("-c", "--dparts", help="Folder or specific parts list file path.")
+    download_parser.set_defaults(func=download_wrapper)
+
+    # Concat subcommand
+    concat_parser = subparser.add_parser("concat")
+    concat_parser.add_argument("path")
+    concat_parser.set_defaults(func=concat_wrapper)
+
+    return _base
+
+
 if __name__ == '__main__':
+    base = get_argparser()
+
+    # Disable warnings
     urllib3.disable_warnings()
-    base = argparse.ArgumentParser()
-    base.add_argument("url")
-    base.add_argument("-c", "--dparts")
+
+    # Parse args & execute
     args = base.parse_args()
-    test(**args.__dict__)
+    args.func(**args.__dict__)
+    exit(0)
