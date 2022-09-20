@@ -113,27 +113,34 @@ class DParts:
         with open(fpath, 'rb') as tasks:
             self._dparts = set(pickle.load(tasks))
 
+        # Lazyload
+        self._slices = None
+
     def __contains__(self, item):
         if isinstance(item, str):
             return item in self._dparts
         return False
 
     def __len__(self):
-        return self._dparts.__len__()
+        return self._dparts.__len__() // 2 if self._slices is None else self._slices.__len__()
 
     def as_list(self) -> List[str]:
         return list(self._dparts)
 
     def get_range_slices(self, **kwargs):
-        cache = set()
-        slices = []
-        for s in self._dparts:
-            l, h = s.split("-")
-            if l not in cache:
-                slices.append(l)
-                cache.add(l)
-            if h not in cache:
-                slices.append(h)
-                cache.add(h)
-        del cache
-        return slices.sort()
+        # Lazyload
+        if not self._slices:
+            cache = set()
+            slices = []
+            for s in self._dparts:
+                l, h = s.split("-")
+                if l not in cache:
+                    slices.append(l)
+                    cache.add(l)
+                if h not in cache:
+                    slices.append(h)
+                    cache.add(h)
+            del cache
+            slices.sort()
+            self._slices = slices
+        return self._slices
