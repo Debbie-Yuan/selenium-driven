@@ -82,7 +82,8 @@ class RangeSlicer:
             for idx in range(0, len(slices) - 1):
                 yield slices[idx] + 1, slices[idx + 1]
         else:
-            for idx in range(0, len(slices) - 1):
+            # In direct mode, only two neighbored element can be treated as a valid range.
+            for idx in range(0, len(slices) - 1, 2):
                 yield slices[idx], slices[idx + 1]
 
 
@@ -99,6 +100,9 @@ class DParts:
 
     Every bytes-range is represented as <low-high>, the result of
     stripping "@bytes=" from the original name.
+
+    Internally, get_slice method can change the formate from string
+    liked <low-high> to slices like [low1, high1, low2, high2].
     """
 
     def __init__(self, fpath: str):
@@ -128,7 +132,7 @@ class DParts:
         return False
 
     def __len__(self):
-        return self._dparts.__len__() // 2 if self._slices is None else self._slices.__len__()
+        return self._dparts.__len__()  if self._slices is None else self._slices.__len__() // 2
 
     def as_list(self) -> List[str]:
         return list(self._dparts)
