@@ -71,6 +71,10 @@ def concat(path):
         raise FileNotFoundError(path)
     p = pathlib.Path(path)
     files = [file for file in p.glob("*.*") if "@bytes" in file.name]
+    if files.__len__() <= 0:
+        logging.info(f"Noting to do with path : {path!r}")
+        return
+
     ms, mbs = precheck_missing_block(files)
     if ms > 0:
         logging.warning(f"Currently we found {ms} bytes of missing, collecting peaceful ones.")
