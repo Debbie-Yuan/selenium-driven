@@ -2,23 +2,19 @@ import io
 import pickle
 import time
 import logging
+from typing import Optional
 
 import requests
 import os
 import queue
 
-from .rangespec import RangeSlicer
+from .rangespec import RangeSlicer, DParts
+from .static import REPORT_FREQUENCY, NS, CHUNK_SIZE, SLICING
 
 rs = RangeSlicer()
-SLICING = True
-THREADED = True
-# CHUNK_SIZE = 1 << 16
-CHUNK_SIZE = 1 << 10
 LAST_REPORT_TIME = None
 Bytes = 0
 Time = 0  # s
-NS = 1000000000  # S
-REPORT_FREQUENCY = int(0.5 * NS)  # 0.5S
 
 
 def report(bytes_amt, time_ns):
@@ -121,16 +117,28 @@ def path_specify(path, name=None, suffix='failed'):
     return meta_info_name
 
 
-def download(url: str, path=None, name=None, headers=None, data=None, retry_timeout=3600):
+# Support for parts range guided download.
+# A range guided download needs to pass in the list of range.
+def download(
+        url: str, path=None, name=None,
+        headers=None, data=None, retry_timeout=3600,
+        dparts: Optional[DParts] = None
+):
     s = requests.session()
     headers = headers or {}
     raw_name = name_handler(path=path, name=name, range_info=None, url=url, with_path=False)
 
     # SLICING loggingIC
-    if SLICING:
-        slices = rs.get_range_slices(url, s)
+    # DParts has been configured:
+    if dparts:
+        logging.info(f"[Download] [DPART] Reading ranges form dparts, with length = {len(dparts)}.")
+        slices = dparts.get_range_slices(url=url, session=s)
     else:
-        slices = rs.get_range_slices(url, s, not_slicing=True)
+        # With no DParts told.
+        if SLICING:
+            slices = rs.get_range_slices(url, s)
+        else:
+            slices = rs.get_range_slices(url, s, not_slicing=True)
     check_slices(slices)  #
 
     checklist = {}  # dict typed
@@ -141,7 +149,7 @@ def download(url: str, path=None, name=None, headers=None, data=None, retry_time
             try:
                 checklist = pickle.load(_f)
             except EOFError:
-                logging.warning("Failed to load checklist file, the file might be edited.")
+                logging.warning("[Download] [FWB] Failed to load checklist file, the file might be edited.")
     # Used to save simultaneously
     checklist_fast_write_fp = open(fn, "wb")
     pickle.dump(checklist, checklist_fast_write_fp)
@@ -175,7 +183,7 @@ def download(url: str, path=None, name=None, headers=None, data=None, retry_time
         # Successful queue
         if code == 0:
             logging.debug(f"[DEBUG][{epoch}/{len(slices) - 1}] ** ** ** "
-                          f"checklist = {checklist}, range_info = {range_info}")
+                          f"checklist = {checklist[-6:]}, range_info = {range_info}")
             checklist[range_info["Range"]] = name
             pickle.dump(checklist, checklist_fast_write_fp)
         else:

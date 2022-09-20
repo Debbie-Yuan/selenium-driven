@@ -1,3 +1,6 @@
+import os.path
+import pathlib
+import pickle
 from typing import List, Optional
 import requests
 import logging
@@ -75,3 +78,51 @@ class RangeSlicer:
             slices[0] = -1
         for idx in range(0, len(slices) - 1):
             yield slices[idx] + 1, slices[idx + 1]
+
+
+class DParts:
+    """
+    A DParts represent a target block tasks hierarchy,
+    the class need a picked file path as its all parameter,
+    from which it will try to read the content, and then
+    convert into a set for speeding up comparing.
+
+    A recommended usage is still downloading with the original
+    slices order, and check every range info using "in" operator,
+    if the object return True, then you should continue.
+
+    Every bytes-range is represented as <low-high>, the result of
+    stripping "@bytes=" from the original name.
+    """
+
+    def __init__(self, fpath: str):
+        from .static import DEFAULT_PARTS_LIST_FILE_NAME
+        fpath = pathlib.Path(fpath)
+
+        if not os.path.exists(fpath):
+            raise FileNotFoundError
+
+        if os.path.isdir(fpath):
+            # Try to find a file suffixed with DEFAULT_PARTS_LIST_FILE_NAME
+            target = [_f for _f in fpath.glob(f"*{DEFAULT_PARTS_LIST_FILE_NAME}")]
+            if target.__len__() > 1 or target.__len__() == 0:
+                raise FileNotFoundError(f"Can't find any valid parts list file in dir {fpath!r}")
+
+            fpath = target[0].absolute()
+
+        with open(fpath, 'rb') as tasks:
+            self._dparts = set(pickle.load(tasks))
+
+    def __contains__(self, item):
+        if isinstance(item, str):
+            return item in self._dparts
+        return False
+
+    def __len__(self):
+        return self._dparts.__len__()
+
+    def as_list(self) -> List[str]:
+        return list(self._dparts)
+
+    def get_range_slices(self, **kwargs):
+        return [s.split("-") for s in self._dparts]

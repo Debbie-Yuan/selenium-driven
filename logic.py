@@ -10,4 +10,4 @@ from statics import CHROME_WEB_DRIVER_PATH
 
 
 browser = webdriver.Chrome(service=Service(executable_path=CHROME_WEB_DRIVER_PATH))
-browser.get("https://hotlink.cc/YHHHBBK9NGFG/XMG20.html")
+browser.get("")
