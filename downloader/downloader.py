@@ -131,14 +131,18 @@ def download(
     # SLICING loggingIC
     # DParts has been configured:
     if dparts:
-        logging.info(f"[Download] [DPART] Reading ranges form dparts, with length = {len(dparts)}.")
         slices = dparts.get_range_slices(url=url, session=s)
+        logging.info(
+            f"[Download] [DPART] Reading ranges form dparts, with length = {len(dparts)}, enabling direct slicing."
+        )
+        direct_slicing = True
     else:
         # With no DParts told.
         if SLICING:
             slices = rs.get_range_slices(url, s)
         else:
             slices = rs.get_range_slices(url, s, not_slicing=True)
+        direct_slicing = False
     check_slices(slices)  #
 
     checklist = {}  # dict typed
@@ -157,7 +161,7 @@ def download(
 
     epoch = 1
     # Download by slice
-    for low, high in rs.iterate_over_slices(slices):
+    for low, high in rs.iterate_over_slices(slices, direct=direct_slicing):
         range_info = rs.gen_range_headers(low, high)
 
         # Fast-forward check

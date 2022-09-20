@@ -71,13 +71,18 @@ class RangeSlicer:
     @classmethod
     def iterate_over_slices(
             cls,
-            slices: List[int]
+            slices: List[int],
+            direct=False
     ):
     # ) -> Generator[None, int, int]:  # noqa
-        if slices[0] != -1:
-            slices[0] = -1
-        for idx in range(0, len(slices) - 1):
-            yield slices[idx] + 1, slices[idx + 1]
+        if not direct:
+            if slices[0] != -1:
+                slices[0] = -1
+            for idx in range(0, len(slices) - 1):
+                yield slices[idx] + 1, slices[idx + 1]
+        else:
+            for idx in range(0, len(slices) - 1):
+                yield slices[idx], slices[idx + 1]
 
 
 class DParts:
