@@ -125,4 +125,15 @@ class DParts:
         return list(self._dparts)
 
     def get_range_slices(self, **kwargs):
-        return [s.split("-") for s in self._dparts]
+        cache = set()
+        slices = []
+        for s in self._dparts:
+            l, h = s.split("-")
+            if l not in cache:
+                slices.append(l)
+                cache.add(l)
+            if h not in cache:
+                slices.append(h)
+                cache.add(h)
+        del cache
+        return slices.sort()
