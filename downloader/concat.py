@@ -12,9 +12,6 @@ from .static import DEFAULT_PARTS_LIST_FILE_NAME, DEFAULT_DISTRIBUTED_DOWNLOADED
 from .rangespec import UNIT
 
 
-logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
-
-
 def precheck_missing_block(
         files: List[pathlib.Path]
 ) -> Tuple[int, List[pathlib.Path]]:
