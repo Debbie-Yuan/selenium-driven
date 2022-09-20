@@ -223,7 +223,7 @@ def download(
         # Successful queue
         if code == 0:
             logging.debug(f"[DEBUG][{epoch}/{len(slices) - 1}] ** ** ** "
-                          f"checklist = {checklist[-6:]}, range_info = {range_info}")
+                          f"checklist = {checklist.items()[-6:]}, range_info = {range_info}")
             checklist[range_info["Range"]] = name
             pickle.dump(checklist, checklist_fast_write_fp)
         else:
