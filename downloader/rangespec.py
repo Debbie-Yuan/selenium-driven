@@ -140,6 +140,7 @@ class DParts:
             slices = []
             for s in self._dparts:
                 l, h = s.split("-")
+                l, h = int(l), int(h)
                 if l not in cache:
                     slices.append(l)
                     cache.add(l)
