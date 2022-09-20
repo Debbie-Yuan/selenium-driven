@@ -61,7 +61,9 @@ def missing_handler(total: List[pathlib.Path], missing: List[pathlib.Path]):
         pickle.dump(missing_bytes_range, mpf)
 
     fn = _f_name + DEFAULT_DISTRIBUTED_DOWNLOADED_TARFILE
-    os.system(f"tar -zcvf {fn} {str(temp_dir_path.absolute())}")
+    tarball_cmd = f"tar -zcvf {fn} {str(temp_dir_path.absolute())}"
+    logging.info(f"[MissingHandler] Archiving fragments using cmd: {tarball_cmd!r}")
+    os.system(tarball_cmd)
 
 
 def concat(path):
