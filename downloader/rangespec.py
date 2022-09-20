@@ -147,6 +147,6 @@ class DParts:
                     slices.append(h)
                     cache.add(h)
             del cache
-            slices.sort()
+            slices.sort(key=lambda x: int(x))
             self._slices = slices
         return self._slices
