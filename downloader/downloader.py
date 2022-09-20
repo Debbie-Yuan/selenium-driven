@@ -138,7 +138,7 @@ def save_meta(**kwargs):
         path = pathlib.Path(".")
 
     meta_file = path / DEFAULT_META_FILE_NAME
-    with open(meta_file, "rw") as meta:
+    with open(meta_file, "w") as meta:
         json.dump(kwargs, meta)
     logging.info(f"[Download] [Meta] Meta saved : {kwargs}.")
 
