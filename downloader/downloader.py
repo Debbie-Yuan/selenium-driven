@@ -161,6 +161,7 @@ def download(
 
     epoch = 1
     # Download by slice
+    logging.debug(f"[Download] [Slices] slices[0:11] = {slices[0:11]}")
     for low, high in rs.iterate_over_slices(slices, direct=direct_slicing):
         range_info = rs.gen_range_headers(low, high)
 

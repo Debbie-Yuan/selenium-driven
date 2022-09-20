@@ -49,6 +49,7 @@ class RangeSlicer:
             range_types = resp.headers.get("Accept-Ranges")
         else:
             range_types = None
+        logging.info(f"[RangeSpec] [HeadSniffing] Content-Length = {content_length}, Accept-Ranges = {range_types}.")
 
         if range_types and not_slicing is False:
             slices = [b for b in range(0, content_length, UNIT)]
