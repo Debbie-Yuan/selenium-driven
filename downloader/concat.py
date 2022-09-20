@@ -61,7 +61,7 @@ def missing_handler(total: List[pathlib.Path], missing: List[pathlib.Path]):
         pickle.dump(missing_bytes_range, mpf)
 
     fn = _f_name + DEFAULT_DISTRIBUTED_DOWNLOADED_TARFILE
-    os.popen(f"tar -zcvf {fn} {str(temp_dir_path.absolute())}")
+    os.system(f"tar -zcvf {fn} {str(temp_dir_path.absolute())}")
 
 
 def concat(path):
