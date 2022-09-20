@@ -18,6 +18,26 @@ class RangeSlicer:
         self.UNIT = unit
 
     @classmethod
+    def make_head_request(cls, url: str, s: requests.Session = None):
+        s = s or requests.Session()
+        try:
+            resp = s.head(url, verify=False)
+        except Exception as be:
+            logging.info(be)
+            return None
+        # content_type = resp.headers.get("Content-Type")
+        content_length = int(resp.headers.get("Content-Length", 0))  # bytes
+
+        if "Accept-Ranges" in resp.headers and resp.headers["Accept-Ranges"] != "none":
+            range_types = resp.headers.get("Accept-Ranges")
+        else:
+            range_types = None
+
+        logging.info(resp.headers)
+        logging.info(f"[RangeSpec] [HeadSniffing] Content-Length = {content_length}, Accept-Ranges = {range_types}.")
+        return content_length, range_types
+
+    @classmethod
     def get_range_slices(
             cls,
             url: str,
@@ -34,22 +54,10 @@ class RangeSlicer:
         :param s: requests.Session, a session object from which the HEAD pre-query request is to be sent.
         :return:
         """
-        s = s or requests.Session()
-        try:
-            resp = s.head(url, verify=False)
-        except Exception as be:
-            logging.info(be)
-            return None
-        # content_type = resp.headers.get("Content-Type")
-        content_length = int(resp.headers.get("Content-Length", 0))  # bytes
+        content_length, range_types = cls.make_head_request(url, s)
+
         if specified_low and specified_low < content_length:
             return [specified_low, content_length]
-
-        if "Accept-Ranges" in resp.headers and resp.headers["Accept-Ranges"] != "none":
-            range_types = resp.headers.get("Accept-Ranges")
-        else:
-            range_types = None
-        logging.info(f"[RangeSpec] [HeadSniffing] Content-Length = {content_length}, Accept-Ranges = {range_types}.")
 
         if range_types and not_slicing is False:
             slices = [b for b in range(0, content_length, UNIT)]
@@ -60,7 +68,6 @@ class RangeSlicer:
                 slices.append(content_length)
         else:
             slices = (0, content_length)
-        logging.info(resp.headers)
         logging.info(slices)
 
         return slices
