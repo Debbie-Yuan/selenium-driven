@@ -52,7 +52,7 @@ def concat_wrapper(**kwargs):
 
 def get_argparser():
     _base = argparse.ArgumentParser()
-    _base.set_defaults(func=lambda **kwargs: _base.format_help())
+    _base.set_defaults(func=lambda **kwargs: print(_base.format_help()))
 
     # Download subcommand
     subparser = _base.add_subparsers()
