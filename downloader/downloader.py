@@ -81,11 +81,11 @@ def _download(
     except requests.exceptions.Timeout:
         logging.info(f"Timeout when downloading file, url = {url}, name = {name}.")
         return 1
-    except IOError:
-        logging.info(f"IOError when saving buffered content, url = {url}, name = {name}.")
+    except IOError as ie:
+        logging.info(f"IOError when saving buffered content, url = {url}, name = {name}.", exc_info=ie)
         return 2
     except Exception as be:
-        logging.info(f"Unhandled exception occurred, exception = {be}, url = {url}, name = {name}.")
+        logging.info(f"Unhandled exception occurred, exception = {be}, url = {url}, name = {name}.", exc_info=be)
         return 3
     else:
         return 0
