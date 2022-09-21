@@ -1,6 +1,4 @@
 import io
-import json
-import pathlib
 import pickle
 import time
 import logging
@@ -11,7 +9,7 @@ import os
 import queue
 
 from .rangespec import RangeSlicer, DParts
-from .static import REPORT_FREQUENCY, NS, CHUNK_SIZE, SLICING, DEFAULT_META_FILE_NAME, Meta
+from .static import REPORT_FREQUENCY, NS, CHUNK_SIZE, SLICING, Meta
 
 rs = RangeSlicer()
 LAST_REPORT_TIME = None
@@ -119,30 +117,6 @@ def path_specify(path, name=None, suffix='failed'):
     return meta_info_name
 
 
-def save_meta(**kwargs):
-    # Downloaded meta
-    # Should include:
-    #   Start time, the timestamp at this calling point
-    cp = time.time()
-    kwargs['start_time'] = cp
-    # url
-    # path
-    # name
-    # headers
-    # data
-    # content_length
-    path = kwargs.get("path")
-    if path and os.path.isdir(path):
-        path = pathlib.Path(path)
-    else:
-        path = pathlib.Path(".")
-
-    meta_file = path / DEFAULT_META_FILE_NAME
-    with open(meta_file, "w") as meta:
-        json.dump(kwargs, meta)
-    logging.info(f"[Meta] Meta saved : {kwargs}.")
-
-
 # Support for parts range guided download.
 # A range guided download needs to pass in the list of range.
 def download(
@@ -174,7 +148,7 @@ def download(
     check_slices(slices)  #
 
     # Save download meta info
-    meta = Meta(
+    _ = Meta(
         instant_save=True, url=url, path=path,
         name=None, headers=None, data=None,
         content_length=content_length,

@@ -1,5 +1,7 @@
 import os
 import pathlib
+import sys
+
 import urllib3
 import logging
 import argparse
@@ -7,13 +9,13 @@ import argparse
 from downloader import download, concat
 from downloader.rangespec import DParts
 
-logging.basicConfig(filename="tests.log", level=logging.DEBUG)
-# logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 logging.getLogger("requests").setLevel(logging.WARNING)
 logging.getLogger("urllib3").setLevel(logging.WARNING)
+logging.root.setLevel(logging.DEBUG)
 
 
 def download_wrapper(**kwargs):
+    logging.basicConfig(filename="tests.log", level=logging.DEBUG)
     # Mixin
     keywords = {'path': None, 'name': None, 'headers': None, 'data': None, 'retry_timeout': 3600, 'dparts': None}
 
@@ -43,6 +45,7 @@ def download_wrapper(**kwargs):
 
 
 def concat_wrapper(**kwargs):
+    logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
     # Arguments check
     path = kwargs.get('path')
     if not os.path.exists(path):

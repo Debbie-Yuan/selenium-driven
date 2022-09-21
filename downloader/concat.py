@@ -50,9 +50,9 @@ def precheck_missing_block(
         if last_value is None:
             last_value = cursor_seq[idx + 1]
             continue
-        if last_value != cursor_seq[idx] + 1:
-            un_download.append(f"{last_value}-{cursor_seq[idx]}")
-            last_value = cursor_seq[idx + 1]
+        if last_value + 1 != cursor_seq[idx]:
+            un_download.append(f"{last_value + 1}-{cursor_seq[idx] - 1}")
+        last_value = cursor_seq[idx + 1]
 
     return missing_size, missing_blocks, un_download
 
@@ -115,7 +115,7 @@ def concat(path):
         if ms > 0:
             logging.warning(f"Currently we found {ms} bytes of missing, collecting peaceful ones.")
         if len(ud) > 0:
-            logging.warning(f"Plus we found {len(ud)} parts of un-downloaded file.")
+            logging.warning(f"Plus we found {len(ud)} parts of un-downloaded file. UD = {ud}")
         missing_handler_existed(files, mbs, ud)
         logging.info(f"Successfully created dparts info, exiting.")
         exit(1)
