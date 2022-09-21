@@ -42,6 +42,7 @@ class Meta:
         self.path = kwargs.get("path")
         if self.path is not None and isinstance(self.path, pathlib.Path):
             self.path = str(self.path)
+            kwargs["path"] = self.path
         self.name = kwargs.get("name")
         self.headers = kwargs.get("headers")
         self.data = kwargs.get("data")
