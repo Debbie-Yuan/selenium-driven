@@ -62,6 +62,8 @@ def get_argparser():
     download_parser = subparser.add_parser("download")
     download_parser.add_argument("url")
     download_parser.add_argument("-c", "--dparts", help="Folder or specific parts list file path.")
+    download_parser.add_argument("-p", "--path", help="Folder to store the file.")
+    download_parser.add_argument("-n", "--name", help="Name of the file.")
     download_parser.set_defaults(func=download_wrapper)
 
     # Concat subcommand
