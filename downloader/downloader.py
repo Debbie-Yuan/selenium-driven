@@ -11,7 +11,7 @@ import os
 import queue
 
 from .rangespec import RangeSlicer, DParts
-from .static import REPORT_FREQUENCY, NS, CHUNK_SIZE, SLICING, DEFAULT_META_FILE_NAME
+from .static import REPORT_FREQUENCY, NS, CHUNK_SIZE, SLICING, DEFAULT_META_FILE_NAME, Meta
 
 rs = RangeSlicer()
 LAST_REPORT_TIME = None
@@ -124,7 +124,7 @@ def save_meta(**kwargs):
     # Should include:
     #   Start time, the timestamp at this calling point
     cp = time.time()
-    kwargs['start-time'] = cp
+    kwargs['start_time'] = cp
     # url
     # path
     # name
@@ -140,7 +140,7 @@ def save_meta(**kwargs):
     meta_file = path / DEFAULT_META_FILE_NAME
     with open(meta_file, "w") as meta:
         json.dump(kwargs, meta)
-    logging.info(f"[Download] [Meta] Meta saved : {kwargs}.")
+    logging.info(f"[Meta] Meta saved : {kwargs}.")
 
 
 # Support for parts range guided download.
@@ -174,11 +174,17 @@ def download(
     check_slices(slices)  #
 
     # Save download meta info
-    save_meta(
-        url=url, path=path, name=None, headers=None,
-        data=None, content_length=content_length,
+    meta = Meta(
+        instant_save=True, url=url, path=path,
+        name=None, headers=None, data=None,
+        content_length=content_length,
         dparts=True if dparts else False
     )
+    # save_meta(
+    #     url=url, path=path, name=None, headers=None,
+    #     data=None, content_length=content_length,
+    #     dparts=True if dparts else False
+    # )
 
     checklist = {}  # dict typed
     # Fast Write Back FD
