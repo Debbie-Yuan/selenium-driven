@@ -1,6 +1,7 @@
 import os.path
 import pathlib
 import pickle
+import reprlib
 from typing import List, Optional
 import requests
 import logging
@@ -110,6 +111,8 @@ class DParts:
 
     Internally, get_slice method can change the formate from string
     liked <low-high> to slices like [low1, high1, low2, high2].
+
+    A DPart file is generated when concatenating fragments.
     """
 
     def __init__(self, fpath: str):
@@ -119,13 +122,18 @@ class DParts:
         if not os.path.exists(fpath):
             raise FileNotFoundError
 
+        self.parts_folder: Optional[pathlib.Path] = None
+
         if os.path.isdir(fpath):
+            self.parts_folder = fpath.absolute()
             # Try to find a file suffixed with DEFAULT_PARTS_LIST_FILE_NAME
             target = [_f for _f in fpath.glob(f"*{DEFAULT_PARTS_LIST_FILE_NAME}")]
             if target.__len__() > 1 or target.__len__() == 0:
                 raise FileNotFoundError(f"Can't find any valid parts list file in dir {fpath!r}")
 
             fpath = target[0].absolute()
+        else:
+            self.parts_folder = fpath.parent.absolute()
 
         with open(fpath, 'rb') as tasks:
             self._dparts = set(pickle.load(tasks))
@@ -144,6 +152,13 @@ class DParts:
     def as_list(self) -> List[str]:
         return list(self._dparts)
 
+    @classmethod
+    def range_slices_narrow_down(cls, _l, _h) -> List[int]:
+        r = [_ for _ in range(_l, _h, UNIT)]
+        if _h not in r:
+            r.append(_h)
+        return r
+
     def get_range_slices(self, **kwargs):
         # Lazyload
         if not self._slices:
@@ -152,6 +167,13 @@ class DParts:
             for s in self._dparts:
                 l, h = s.split("-")
                 l, h = int(l), int(h)
+                if h - l > UNIT:
+                    cache.add(l)
+                    cache.add(h)
+                    slices.extend(_t := self.range_slices_narrow_down(l, h))
+                    logging.info(f"[RangeSpec] Range {l}-{h} from "
+                                 f"dparts larger than UNIT:{UNIT}, "
+                                 f"cutting down to pieces: {reprlib.repr(_t)}.")
                 if l not in cache:
                     slices.append(l)
                     cache.add(l)

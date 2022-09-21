@@ -126,10 +126,10 @@ def download(
 ):
     s = requests.session()
     headers = headers or {}
-    raw_name = name_handler(path=path, name=name, range_info=None, url=url, with_path=False)
 
     # SLICING loggingIC
     # DParts has been configured:
+    # If DParts enabled, we enforce using the directory in which lays the .dparts file.
     if dparts:
         slices = dparts.get_range_slices(url=url, session=s)
         logging.info(
@@ -137,6 +137,7 @@ def download(
         )
         direct_slicing = True
         content_length, _ = rs.make_head_request(url, s)
+        path = dparts.parts_folder
     else:
         # With no DParts told.
         if SLICING:
@@ -147,6 +148,7 @@ def download(
         content_length = slices[-1]
     check_slices(slices)  #
 
+    raw_name = name_handler(path=path, name=name, range_info=None, url=url, with_path=False)
     # Save download meta info
     _ = Meta(
         instant_save=True, url=url, path=path,
