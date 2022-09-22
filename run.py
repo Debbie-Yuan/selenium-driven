@@ -8,14 +8,21 @@ import argparse
 
 from downloader import download, concat
 from downloader.rangespec import DParts
+from utils.migrate import WebServerMigrator
+from .statics import LOGGING_FORMAT
 
-logging.getLogger("requests").setLevel(logging.WARNING)
-logging.getLogger("urllib3").setLevel(logging.WARNING)
+logging.getLogger("requests").setLevel(logging.ERROR)
+logging.getLogger("urllib3").setLevel(logging.ERROR)
+logging.getLogger("urllib").setLevel(logging.ERROR)
 logging.root.setLevel(logging.DEBUG)
 
 
 def download_wrapper(**kwargs):
-    logging.basicConfig(filename="tests.log", level=logging.DEBUG)
+    logging.basicConfig(
+        filename="tests.log",
+        level=logging.DEBUG,
+        format=LOGGING_FORMAT
+    )
     # Mixin
     keywords = {'path': None, 'name': None, 'headers': None, 'data': None, 'retry_timeout': 3600, 'dparts': None}
 
@@ -45,12 +52,26 @@ def download_wrapper(**kwargs):
 
 
 def concat_wrapper(**kwargs):
-    logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
+    logging.basicConfig(
+        stream=sys.stdout,
+        level=logging.DEBUG,
+        format=LOGGING_FORMAT
+    )
     # Arguments check
     path = kwargs.get('path')
     if not os.path.exists(path):
         raise FileNotFoundError(f"Path {path} not found.")
     concat(path)
+
+
+def migrate_wrapper(**kwargs):
+    logging.basicConfig(
+        stream=sys.stdout,
+        level=logging.DEBUG,
+        format=LOGGING_FORMAT
+    )
+    wm = WebServerMigrator(kwargs.get("url"))
+    wm.migrate(**kwargs)
 
 
 def get_argparser():
@@ -70,6 +91,18 @@ def get_argparser():
     concat_parser = subparser.add_parser("concat")
     concat_parser.add_argument("path")
     concat_parser.set_defaults(func=concat_wrapper)
+
+    # Migrate subcommand
+    migrate_parser = subparser.add_parser("migrate")
+    migrate_parser.add_argument("url")
+    migrate_parser.add_argument("-t", "--to", help="Local store directory, default is the current working directory.")
+    migrate_parser.add_argument(
+        "-m",
+        "--mkdir",
+        action="store_true",
+        help="Make another directory based on to, or current working directory."
+    )
+    migrate_parser.set_defaults(func=migrate_wrapper)
 
     return _base
 
