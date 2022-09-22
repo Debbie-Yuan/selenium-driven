@@ -147,7 +147,7 @@ def concat(path, **kwargs):
         if slices[0] != 0:
             un_download.append(f"{0}-{slices[0]}")
             logging.info(f"\033[31m[N]\033[0m  PART {0}-{slices[0]}")
-        last_value = None
+        last_value = -2
         for idx in range(0, len(slices) - 1, 2):
             # if last_value is None:
             #     last_value = slices[idx + 1]
