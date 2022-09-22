@@ -149,14 +149,14 @@ def concat(path, **kwargs):
             logging.info(f"\033[31m[N]\033[0m  PART {0}-{slices[0]}")
         last_value = None
         for idx in range(0, len(slices) - 1, 2):
-            logging.info(f"\033[34m[Y]\033[0m  PART {slices[idx]}-{slices[idx + 1]}")
-            if last_value is None:
-                last_value = slices[idx + 1]
-                continue
+            # if last_value is None:
+            #     last_value = slices[idx + 1]
+            #     continue
             if last_value + 1 != slices[idx]:
                 un_download.append(f"{last_value + 1}-{slices[idx] - 1}")
                 logging.info(f"\033[31m[N]\033[0m  PART {last_value + 1}-{slices[idx] - 1}")
             last_value = slices[idx + 1]
+            logging.info(f"\033[34m[Y]\033[0m  PART {slices[idx]}-{slices[idx + 1]}")
 
         if slices[-1] != length:
             un_download.append(f"{slices[-1]}-{meta.content_length}")
