@@ -125,14 +125,41 @@ def concat(path, **kwargs):
         return
 
     if kwargs.get("export"):
-        d = DParts(path)
-        parts = d.as_list()
-        print(parts)
-        ms, mbs, ud = precheck_missing_block(path, files)
+        # d = DParts(path)
+        # parts = d.as_list()
+        # ms, mbs, ud = precheck_missing_block(path, files)
         files.sort(key=lambda x: int(str(x.name).rsplit("-", maxsplit=1)[-1]))
-        print(mbs, ud)
-        # print(files)
-        print(UNIT)
+        #
+        try:
+            meta = Meta.load(path)
+            length = meta.content_length
+        except Exception:  # noqa
+            logging.exception(f"Broken, you cannot use this function without meta.")
+            exit(-1)
+
+        slices = []
+        for file in files:
+            a, b = file.name.rsplit("@bytes=", maxsplit=1)[-1].split("-")
+            slices.append(int(a))
+            slices.append(int(b))
+
+        un_download = []
+        if slices[0] != 0:
+            un_download.append(f"{0}-{slices[0]}")
+            logging.info(f"\033[31m[N]\033[0m  PART {0}-{slices[0]}")
+        last_value = None
+        for idx in range(0, len(slices) - 1, 2):
+            logging.info(f"\033[34m[Y]\033[0m  PART {slices[idx]}-{slices[idx + 1]}")
+            if last_value is None:
+                last_value = slices[idx + 1]
+                continue
+            if last_value + 1 != slices[idx]:
+                un_download.append(f"{last_value + 1}-{slices[idx] - 1}")
+                logging.info(f"\033[31m[N]\033[0m  PART {last_value + 1}-{slices[idx] - 1}")
+            last_value = slices[idx + 1]
+
+        if slices[-1] != length:
+            un_download.append(f"{slices[-1]}-{meta.content_length}")
         exit(0)
 
     if not kwargs.get("force"):
