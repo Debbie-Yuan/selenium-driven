@@ -152,7 +152,7 @@ def concat(path, **kwargs):
             # if last_value is None:
             #     last_value = slices[idx + 1]
             #     continue
-            if last_value + 1 != slices[idx]:
+            if last_value + 1 != slices[idx] and last_value != -2:
                 if last_value == slices[idx]:
                     logging.warning(f"\033[33m[F] Two pieces have the same byte.\033[0m {last_value}-{slices[idx]}")
                     continue
