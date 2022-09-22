@@ -153,6 +153,9 @@ def concat(path, **kwargs):
             #     last_value = slices[idx + 1]
             #     continue
             if last_value + 1 != slices[idx]:
+                if last_value == slices[idx]:
+                    logging.warning(f"\033[33m[F] Two pieces have the same byte.\033[0m {last_value}-{slices[idx]}")
+                    continue
                 un_download.append(f"{last_value + 1}-{slices[idx] - 1}")
                 logging.info(f"\033[31m[N]\033[0m  PART {last_value + 1}-{slices[idx] - 1}")
             last_value = slices[idx + 1]
