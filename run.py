@@ -9,7 +9,7 @@ import argparse
 from downloader import download, concat
 from downloader.rangespec import DParts
 from utils.migrate import WebServerMigrator
-from .statics import LOGGING_FORMAT
+from statics import LOGGING_FORMAT
 
 logging.getLogger("requests").setLevel(logging.ERROR)
 logging.getLogger("urllib3").setLevel(logging.ERROR)
@@ -61,7 +61,7 @@ def concat_wrapper(**kwargs):
     path = kwargs.get('path')
     if not os.path.exists(path):
         raise FileNotFoundError(f"Path {path} not found.")
-    concat(path)
+    concat(**kwargs)
 
 
 def migrate_wrapper(**kwargs):
@@ -90,6 +90,9 @@ def get_argparser():
     # Concat subcommand
     concat_parser = subparser.add_parser("concat")
     concat_parser.add_argument("path")
+    concat_parser.add_argument("-f", "--without_meta", action="store_true", help="Continue without meta file.")
+    concat_parser.add_argument("-F", "--force", action="store_true", help="Don't check mission, just concat.")
+    concat_parser.add_argument("-E", "--export", action="store_true", help="Export digest only.")
     concat_parser.set_defaults(func=concat_wrapper)
 
     # Migrate subcommand

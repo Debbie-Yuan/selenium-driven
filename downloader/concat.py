@@ -4,12 +4,15 @@ import pathlib
 import pickle
 import shutil
 import sys
+import threading
 from typing import List, Tuple
 
 import tqdm
 
 from .static import DEFAULT_PARTS_LIST_FILE_NAME, DEFAULT_DISTRIBUTED_DOWNLOADED_TARFILE, Meta
-from .rangespec import UNIT
+from .rangespec import UNIT, DParts
+
+_LOCAL = threading.local()
 
 
 def precheck_missing_block(
@@ -34,22 +37,32 @@ def precheck_missing_block(
 
     # Meta
     # Un-download parts
-    cursor_seq.sort()
-    un_download = []
-    meta = Meta.load(path)
-    if cursor_seq[-1] != meta.content_length:
-        un_download.append(f"{cursor_seq[-1]}-{meta.content_length}")
-    if cursor_seq[0] != 0:
-        missing_blocks.append(f"{0}-{cursor_seq[0]}")
+    try:
+        meta = Meta.load(path)
+    except FileNotFoundError as fnfe:
+        if _LOCAL.__getattribute__("without_meta"):
+            logging.info("Ignoring meta file inexistency.")
+            un_download = []
+        else:
+            logging.exception(f"Cannot find meta file from your directory, "
+                              f"maybe you could try with --without_meta. Excption = {str(fnfe)}")
+            exit(-1)
+    else:
+        cursor_seq.sort()
+        un_download = []
+        if cursor_seq[-1] != meta.content_length:
+            un_download.append(f"{cursor_seq[-1]}-{meta.content_length}")
+        if cursor_seq[0] != 0:
+            missing_blocks.append(f"{0}-{cursor_seq[0]}")
 
-    last_value = None
-    for idx in range(0, len(cursor_seq) - 1, 2):
-        if last_value is None:
+        last_value = None
+        for idx in range(0, len(cursor_seq) - 1, 2):
+            if last_value is None:
+                last_value = cursor_seq[idx + 1]
+                continue
+            if last_value + 1 != cursor_seq[idx]:
+                un_download.append(f"{last_value + 1}-{cursor_seq[idx] - 1}")
             last_value = cursor_seq[idx + 1]
-            continue
-        if last_value + 1 != cursor_seq[idx]:
-            un_download.append(f"{last_value + 1}-{cursor_seq[idx] - 1}")
-        last_value = cursor_seq[idx + 1]
 
     return missing_size, missing_blocks, un_download
 
@@ -98,7 +111,11 @@ def missing_handler_existed(total: List[pathlib.Path], missing: List[pathlib.Pat
     os.system(tarball_cmd)
 
 
-def concat(path):
+def concat(path, **kwargs):
+    # threading.local
+    for k, v in kwargs.items():
+        _LOCAL.__setattr__(k, v)
+
     if not os.path.isdir(path):
         raise FileNotFoundError(path)
     p = pathlib.Path(path)
@@ -107,15 +124,27 @@ def concat(path):
         logging.info(f"Noting to do with path : {path!r}")
         return
 
-    ms, mbs, ud = precheck_missing_block(path, files)
-    if ms > 0 or len(ud) > 0:
-        if ms > 0:
-            logging.warning(f"Currently we found {ms} bytes of missing, collecting peaceful ones.")
-        if len(ud) > 0:
-            logging.warning(f"Plus we found {len(ud)} parts of un-downloaded file. UD = {ud}")
-        missing_handler_existed(files, mbs, ud)
-        logging.info(f"Successfully created dparts info, exiting.")
-        exit(1)
+    if kwargs.get("export"):
+        d = DParts(path)
+        parts = d.as_list()
+        print(parts)
+        ms, mbs, ud = precheck_missing_block(path, files)
+        files.sort(key=lambda x: int(str(x.name).rsplit("-", maxsplit=1)[-1]))
+        print(mbs, ud)
+        # print(files)
+        print(UNIT)
+        exit(0)
+
+    if not kwargs.get("force"):
+        ms, mbs, ud = precheck_missing_block(path, files)
+        if ms > 0 or len(ud) > 0:
+            if ms > 0:
+                logging.warning(f"Currently we found {ms} bytes of missing, collecting peaceful ones.")
+            if len(ud) > 0:
+                logging.warning(f"Plus we found {len(ud)} parts of un-downloaded file. UD = {ud}")
+            missing_handler_existed(files, mbs, ud)
+            logging.info(f"Successfully created dparts info, exiting.")
+            exit(1)
 
     # @bytes=119537665-125829120
     files.sort(key=lambda x: int(str(x.name).rsplit("-", maxsplit=1)[-1]))
