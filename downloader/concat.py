@@ -165,7 +165,7 @@ def concat(path, **kwargs):
             un_download.append(f"{slices[-1]}-{meta.content_length}")
 
         _f_name = files[0].name.rsplit('@', maxsplit=1)[0]
-        with open(path / (_f_name + DEFAULT_PARTS_LIST_FILE_NAME), "wb") as mpf:
+        with open(p / (_f_name + DEFAULT_PARTS_LIST_FILE_NAME), "wb") as mpf:
             pickle.dump(un_download, mpf)
         logging.info("DPart file saved.")
         exit(0)
