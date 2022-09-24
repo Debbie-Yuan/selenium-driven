@@ -138,6 +138,8 @@ class DParts:
         with open(fpath, 'rb') as tasks:
             self._dparts = set(pickle.load(tasks))
 
+        self._dparts = list(self._dparts)
+        self._dparts.sort(key=lambda x: int(x.split('-')[0]))
         # Lazyload
         self._slices = None
 
