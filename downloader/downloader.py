@@ -122,7 +122,7 @@ def path_specify(path, name=None, suffix='failed'):
 def download(
         url: str, path=None, name=None,
         headers=None, data=None, retry_timeout=3600,
-        dparts: Optional[DParts] = None
+        dparts: Optional[DParts] = None, block_index: Optional[int] = None
 ):
     s = requests.session()
     headers = headers or {}
@@ -180,6 +180,11 @@ def download(
     # Download by slice
     logging.debug(f"[Download] [Slices] slices[0:11] = {slices[0:11]}")
     for low, high in rs.iterate_over_slices(slices, direct=direct_slicing):
+        # block_index is the first failed item.
+        if block_index and epoch < block_index:
+            logging.info(f"[Resumable] Jumping over block {epoch}/{len(slices) - 1}")
+            continue
+
         range_info = rs.gen_range_headers(low, high)
 
         # Fast-forward check
@@ -193,7 +198,8 @@ def download(
         headers.update(range_info)
         _name = name_handler(path=path, name=name, range_info=range_info, url=url)
         logging.info(f"[Download][{epoch}/{len(slices) - 1}] "
-                     f"Starting with url = {url}, name = {_name}, headers = {headers}")
+                     f"Starting with url = {url}, name = {_name},"
+                     f" overwrite = {os.path.exists(_name)}, headers = {headers}")
         st = time.time()
         code = _download(url, name=_name, s=s, headers=headers, data=data)
         duration = time.time() - st

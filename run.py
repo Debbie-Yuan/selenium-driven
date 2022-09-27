@@ -24,7 +24,8 @@ def download_wrapper(**kwargs):
         format=LOGGING_FORMAT
     )
     # Mixin
-    keywords = {'path': None, 'name': None, 'headers': None, 'data': None, 'retry_timeout': 3600, 'dparts': None}
+    keywords = {'path': None, 'name': None, 'headers': None,
+                'data': None, 'retry_timeout': 3600, 'dparts': None, 'block_index': None}
 
     # Arguments check
     url = kwargs.get('url')
@@ -45,7 +46,13 @@ def download_wrapper(**kwargs):
     dparts = kwargs.get("dparts")
     if dparts:
         dp = DParts(dparts)
-        keywords["dparts"] = dp
+        keywords["dparts"] = dp  # NOQA
+
+    # block_index
+    block_index = kwargs.get("block_index")
+    if block_index:
+        logging.info("[ENV] Ignoring DParts thus enabling index guided download.")
+        keywords["dparts"] = None
 
     cl, tf = download(url, **keywords)
     logging.info(tf)
@@ -85,6 +92,7 @@ def get_argparser():
     download_parser.add_argument("-c", "--dparts", help="Folder or specific parts list file path.")
     download_parser.add_argument("-p", "--path", help="Folder to store the file.")
     download_parser.add_argument("-n", "--name", help="Name of the file.")
+    download_parser.add_argument("-I", "--block_index", help="Integers of fragment index.", type=int)
     download_parser.set_defaults(func=download_wrapper)
 
     # Concat subcommand
