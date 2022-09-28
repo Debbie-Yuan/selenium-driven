@@ -36,7 +36,10 @@ def download_wrapper(**kwargs):
         name = name.split(".")[0]
 
     # Path & dir preparation
-    path = str(pathlib.Path(__file__).absolute().parent / name)
+    if kwargs["path"] and not os.path.exists(kwargs["path"]):
+        path = kwargs["path"]
+    else:
+        path = str(pathlib.Path(__file__).absolute().parent / name)
     logging.info(f"[ENV] Preparing env with file {name}, dir {path} created, begin to download.")
     if not os.path.exists(path):
         os.mkdir(path)
