@@ -181,7 +181,7 @@ def download(
     logging.debug(f"[Download] [Slices] slices[-2:] = {slices[-2:]}, block_= {block_index}, type={type(block_index)}")
     for low, high in rs.iterate_over_slices(slices, direct=direct_slicing):
         # block_index is the first failed item.
-        if block_index and epoch in block_index:
+        if block_index and epoch not in block_index:
             logging.info(f"[Resumable] Jumping over block {epoch}/{len(slices) - 1}")
             epoch += 1
             continue

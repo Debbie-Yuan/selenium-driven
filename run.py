@@ -43,7 +43,7 @@ def download_wrapper(**kwargs):
     logging.info(f"[ENV] Preparing env with file {name}, dir {path} created, begin to download.")
     if not os.path.exists(path):
         os.mkdir(path)
-        keywords["path"] = path
+    keywords["path"] = path
 
     # DParts
     dparts = kwargs.get("dparts")
@@ -59,6 +59,7 @@ def download_wrapper(**kwargs):
 
         # This logic has been implemented in rangespec.BlockInterpreter
         keywords["block_index"] = BlockInterpreter(block_index)
+        logging.info(keywords["block_index"])
 
     cl, tf = download(url, **keywords)
     logging.info(tf)
@@ -98,7 +99,7 @@ def get_argparser():
     download_parser.add_argument("-c", "--dparts", help="Folder or specific parts list file path.")
     download_parser.add_argument("-p", "--path", help="Folder to store the file.")
     download_parser.add_argument("-n", "--name", help="Name of the file.")
-    download_parser.add_argument("-I", "--block_index", help="Integers of fragment index.", type=int)
+    download_parser.add_argument("-I", "--block_index", help="Integers of fragment index.")
     download_parser.set_defaults(func=download_wrapper)
 
     # Concat subcommand
