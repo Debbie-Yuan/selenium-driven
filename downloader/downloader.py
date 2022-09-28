@@ -200,7 +200,8 @@ def download(
         _name = name_handler(path=path, name=name, range_info=range_info, url=url)
         logging.info(f"[Download][{epoch}/{len(slices) - 1}] "
                      f"Starting with url = {url}, name = {_name},"
-                     f" overwrite = {os.path.exists(_name)}, headers = {headers}")
+                     f" overwrite = {os.path.exists(_name)}, headers = {headers}, "
+                     f"save to {raw_name}")
         st = time.time()
         code = _download(url, name=_name, s=s, headers=headers, data=data)
         duration = time.time() - st
