@@ -53,6 +53,7 @@ def download_wrapper(**kwargs):
     if block_index:
         logging.info("[ENV] Ignoring DParts thus enabling index guided download.")
         keywords["dparts"] = None
+        keywords["block_index"] = int(block_index)
 
     cl, tf = download(url, **keywords)
     logging.info(tf)

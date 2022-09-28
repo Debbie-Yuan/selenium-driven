@@ -178,11 +178,12 @@ def download(
 
     epoch = 1
     # Download by slice
-    logging.debug(f"[Download] [Slices] slices[0:11] = {slices[0:11]}")
+    logging.debug(f"[Download] [Slices] slices[-2:] = {slices[-2:]}, block_= {block_index}, type={type(block_index)}")
     for low, high in rs.iterate_over_slices(slices, direct=direct_slicing):
         # block_index is the first failed item.
         if block_index and epoch < block_index:
             logging.info(f"[Resumable] Jumping over block {epoch}/{len(slices) - 1}")
+            epoch += 1
             continue
 
         range_info = rs.gen_range_headers(low, high)
