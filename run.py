@@ -7,7 +7,7 @@ import logging
 import argparse
 
 from downloader import download, concat
-from downloader.rangespec import DParts
+from downloader.rangespec import DParts, BlockInterpreter
 from utils.migrate import WebServerMigrator
 from statics import LOGGING_FORMAT
 
@@ -56,7 +56,9 @@ def download_wrapper(**kwargs):
     if block_index:
         logging.info("[ENV] Ignoring DParts thus enabling index guided download.")
         keywords["dparts"] = None
-        keywords["block_index"] = int(block_index)
+
+        # This logic has been implemented in rangespec.BlockInterpreter
+        keywords["block_index"] = BlockInterpreter(block_index)
 
     cl, tf = download(url, **keywords)
     logging.info(tf)

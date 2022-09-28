@@ -186,3 +186,99 @@ class DParts:
             slices.sort(key=lambda x: int(x))
             self._slices = slices
         return self._slices
+
+
+class BlockInterpreter:
+
+    def _parse(self):
+        # 首先检查是否有column
+        if ":" in self._raw:
+            tokens = self._raw.split(":")
+        else:
+            tokens = [self._raw]
+
+        # 对于每个range item进行处理
+        # 首先要循环找出大于或小于的范围匹配参数，以供精确值的修复使用
+        for token in tokens:
+            if "<" in token:
+                try:
+                    self._lower_bound = int(token.replace("<", ""))
+                except Exception:  # noqa  如果int转换失败，对这个token报错
+                    logging.exception(
+                        f"[RangeSpec] [Block] Cannot convert the specified identifier {token!r} into range spec."
+                    )
+                    exit(-1)
+            elif ">" in token:
+                try:
+                    self._upper_bound = int(token.replace(">", ""))
+                except Exception:  # noqa
+                    logging.exception(
+                        f"[RangeSpec] [Block] Cannot convert the specified identifier {token!r} into range spec."
+                    )
+                    exit(-1)
+
+        for token in tokens:
+            if "<" in token or ">" in token:
+                continue
+
+            if "-" in token:
+                try:
+                    _l, _h = token.split('-')
+                except Exception:  # noqa
+                    logging.exception(
+                        f"[RangeSpec] [Block] Cannot parse range {token!r} into exactly two bounds."
+                    )
+                    exit(-1)
+
+                try:
+                    _l, _h = int(_l), int(_h)  # noqa
+                except Exception:  # noqa
+                    logging.exception(
+                        f"[[RangeSpec] [Block]] Cannot parse range {token!r} into integers."
+                    )
+                    exit(-1)
+            else:
+                try:
+                    _l, _h = int(token), int(token)
+                except Exception:  # noqa
+                    logging.exception(
+                        f"[RangeSpec] [Block] Cannot parse range {token!r} into integer."
+                    )
+                    exit(-1)
+
+            assert isinstance(_l, int) and isinstance(_h, int)
+
+            # 扩展此部分range
+            for _i in range(_l, _h + 1):
+                if self._lower_bound and _i <= self._lower_bound:
+                    continue
+                if self._upper_bound and _i >= self._upper_bound:
+                    continue
+                self._ranges.add(_i)
+
+    def __init__(self, block_stmt: str):
+        self._raw: str = block_stmt
+
+        self._upper_bound: Optional[int] = None  # 包含自己
+        self._lower_bound: Optional[int] = None  # 包含自己
+        self._ranges = set()  # 精确命中
+
+        self._parse()
+
+    def __contains__(self, item):
+        if not isinstance(item, int):
+            return False
+
+        # 精确搜索
+        if item in self._ranges:
+            return True
+
+        # 范围搜索
+        if (self._upper_bound and item >= self._upper_bound) or (self._lower_bound and item <= self._lower_bound):
+            return True
+        return False
+
+    def __repr__(self):
+        return super(BlockInterpreter, self).__repr__().rsplit(">", maxsplit=1)[0] + \
+               f" == Lower: {self._lower_bound}, Upper: {self._upper_bound}, Ranges: {reprlib.repr(self._ranges)}>"
+

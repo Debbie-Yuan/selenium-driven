@@ -8,7 +8,7 @@ import requests
 import os
 import queue
 
-from .rangespec import RangeSlicer, DParts
+from .rangespec import RangeSlicer, DParts, BlockInterpreter
 from .static import REPORT_FREQUENCY, NS, CHUNK_SIZE, SLICING, Meta
 
 rs = RangeSlicer()
@@ -122,7 +122,7 @@ def path_specify(path, name=None, suffix='failed'):
 def download(
         url: str, path=None, name=None,
         headers=None, data=None, retry_timeout=3600,
-        dparts: Optional[DParts] = None, block_index: Optional[int] = None
+        dparts: Optional[DParts] = None, block_index: Optional[BlockInterpreter] = None
 ):
     s = requests.session()
     headers = headers or {}
@@ -181,7 +181,7 @@ def download(
     logging.debug(f"[Download] [Slices] slices[-2:] = {slices[-2:]}, block_= {block_index}, type={type(block_index)}")
     for low, high in rs.iterate_over_slices(slices, direct=direct_slicing):
         # block_index is the first failed item.
-        if block_index and epoch < block_index:
+        if block_index and epoch in block_index:
             logging.info(f"[Resumable] Jumping over block {epoch}/{len(slices) - 1}")
             epoch += 1
             continue
